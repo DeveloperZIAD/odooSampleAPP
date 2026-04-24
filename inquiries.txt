@@ -1,0 +1,8 @@
+--- New Inquiry ---
+Name: بس
+Phone: 1212121212
+Address: المسمسم
+Property: Warranty
+Price: 20.0
+URL: http://localhost:8069/shop/warranty-30
+-------------------

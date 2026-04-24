@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="product_hide_cart_real_estate" inherit_id="website_sale.product">
+        
+        <xpath expr="//a[@id='add_to_cart']" position="replace">
+            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+            <button type="button" class="btn btn-primary btn-lg mt16 o_estate_api_button"
+                    t-att-data-product-name="product.name"
+                    t-att-data-product-price="product.list_price"
+                    t-att-data-product-url="product.website_url">
+                اطلب معاينة الآن
+            </button>
+
+            <script type="text/javascript">
+                //<![CDATA[
+                document.addEventListener('click', async function (event) {
+                    if (event.target.classList.contains('o_estate_api_button')) {
+                        const btn = event.target;
+
+                        // عرض SweetAlert2 Form بدلاً من الـ Prompt القديم
+                        const { value: formValues } = await Swal.fire({
+                            title: 'طلب معاينة عقار',
+                            html:
+                                '<input id="swal-name" class="swal2-input" placeholder="الاسم بالكامل">' +
+                                '<input id="swal-phone" class="swal2-input" placeholder="رقم التليفون">' +
+                                '<input id="swal-address" class="swal2-input" placeholder="عنوانك الحالي">',
+                            focusConfirm: false,
+                            confirmButtonText: 'إرسال الطلب',
+                            showCancelButton: true,
+                            cancelButtonText: 'إلغاء',
+                            preConfirm: () => {
+                                const name = document.getElementById('swal-name').value;
+                                const phone = document.getElementById('swal-phone').value;
+                                const address = document.getElementById('swal-address').value;
+                                if (!name || !phone) {
+                                    Swal.showValidationMessage('من فضلك أدخل الاسم ورقم التليفون');
+                                }
+                                return { name, phone, address };
+                            }
+                        });
+
+                        if (formValues) {
+                            const data = {
+                                property_name: btn.getAttribute('data-product-name'),
+                                price: btn.getAttribute('data-product-price'),
+                                url: window.location.origin + btn.getAttribute('data-product-url'),
+                                address: formValues.address,
+                                client_phone: formValues.phone,
+                                client_name: formValues.name
+                            };
+
+                            try {
+                                // إظهار Loading أثناء الإرسال
+                                Swal.fire({ title: 'جاري الإرسال...', didOpen: () => { Swal.showLoading() } });
+
+                                const response = await fetch('/api/estate/inquiry', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ params: data })
+                                });
+                                
+                                const result = await response.json();
+                                if (result.result && result.result.status === 'success') {
+                                    Swal.fire('تم بنجاح!', 'تم استلام طلبك، سيتواصل معك فريقنا قريباً.', 'success');
+                                }
+                            } catch (error) {
+                                Swal.fire('خطأ!', 'فشل إرسال الطلب، حاول مرة أخرى.', 'error');
+                            }
+                        }
+                    }
+                });
+                //]]>
+            </script>
+        </xpath>
+
+        <xpath expr="//div[@id='product_details']" position="inside">
+            <style>
+                .css_quantity, #add_to_cart, .js_check_product { display: none !important; }
+                /* تنسيق حقول SweetAlert لتناسب التصميم */
+                .swal2-input { font-size: 16px !important; }
+            </style>
+        </xpath>
+
+    </template>
+</odoo>
